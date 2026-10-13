@@ -1,6 +1,6 @@
 import torch
 
-def build_sft_batch(tokenizers, prompts, responses, max_length):
+def build_sft_batch(tokenizer, prompts, responses, max_length):
     all_ids = []
     all_labels = []
 
