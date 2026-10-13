@@ -1,4 +1,8 @@
 import torch
+import torch.nn.functional as F
+
+
+
 
 def build_sft_batch(tokenizer, prompts, responses, max_length):
     all_ids = []
@@ -49,7 +53,43 @@ def build_sft_batch(tokenizer, prompts, responses, max_length):
 
 
 
+
 def build_dpo_batch(tokenizer, prompts, chosen_responses, rejected_responses, max_length):
     chosen_batch = build_sft_batch(tokenizer, prompts, chosen_responses, max_length)
     rejected_batch = build_sft_batch(tokenizer, prompts, rejected_responses, max_length)
     return {"chosen": chosen_batch, "rejected": rejected_batch}
+
+
+
+
+def token_logps(model, batch):
+    device = next(model.parameters()).device
+    input_ids = batch["input_ids"].to(device)
+    attention_mask = batch["attention_mask"].to(device)
+    labels = batch["labels"].to(device)
+
+    out = model(input_ids=input_ids, attention_mask=attention_mask) 
+    logits = out.logits                      
+    # [B, T, V]
+
+    logits = logits[:, :-1, :].float()
+    targets = labels[:, 1:]
+    B, T, V = logits.shape
+    neg_log_loss = F.cross_entropy(logits.reshape(B * T, V), targets.reshape(B * T), ignore_index=-100, reduction="none")
+    neg_log_loss = neg_log_loss.view(B, T)
+    logps = -neg_log_loss
+    mask = (targets != -100).float()
+    return logps, mask
+
+
+
+def batch_response_logps(model, batch):
+    logps, mask = token_logps(model, batch)
+    return (logps * mask).sum(dim=1)
+
+
+
+
+def compute_response_logprobs(model, tokenizer, prompts, responses, max_length):
+    batch = build_sft_batch(tokenizer, prompts, responses, max_length)
+    return batch_response_logps(model, batch)
