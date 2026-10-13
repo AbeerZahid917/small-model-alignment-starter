@@ -6,12 +6,10 @@ code itself in this file.
 """
 
 from __future__ import annotations
-
+import mylib
 
 def build_sft_batch(tokenizer, prompts, responses, max_length):
-    """Return input_ids, attention_mask, and response-only labels."""
-
-    raise NotImplementedError("Connect this adapter to your SFT batch builder")
+    return mylib.build_sft_batch(tokenizer, prompts, responses, max_length)
 
 
 def compute_response_logprobs(model, tokenizer, prompts, responses, max_length):
