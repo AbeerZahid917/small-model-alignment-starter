@@ -46,3 +46,10 @@ def build_sft_batch(tokenizer, prompts, responses, max_length):
         "attention_mask": torch.tensor(attention_mask, dtype=torch.long),
         "labels": torch.tensor(labels_out, dtype=torch.long),
     }
+
+
+
+def build_dpo_batch(tokenizer, prompts, chosen_responses, rejected_responses, max_length):
+    chosen_batch = build_sft_batch(tokenizer, prompts, chosen_responses, max_length)
+    rejected_batch = build_sft_batch(tokenizer, prompts, rejected_responses, max_length)
+    return chosen_batch, rejected_batch

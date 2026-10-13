@@ -25,9 +25,7 @@ def compute_sft_loss(model, tokenizer, prompts, responses, max_length):
 
 
 def build_dpo_batch(tokenizer, prompts, chosen_responses, rejected_responses, max_length):
-    """Return separate response-masked LM batches for chosen and rejected rows."""
-
-    raise NotImplementedError("Connect this adapter to your DPO batch builder")
+    return mylib.build_dpo_batch(tokenizer, prompts, chosen_responses, rejected_responses, max_length)
 
 
 def compute_dpo_loss_from_logps(
