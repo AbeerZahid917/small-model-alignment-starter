@@ -13,9 +13,7 @@ def build_sft_batch(tokenizer, prompts, responses, max_length):
 
 
 def compute_response_logprobs(model, tokenizer, prompts, responses, max_length):
-    """Return one summed response-token log-probability per input row."""
-
-    raise NotImplementedError("Connect this adapter to your log-probability code")
+    return mylib.compute_response_logprobs(model, tokenizer, prompts, responses, max_length)
 
 
 def compute_sft_loss(model, tokenizer, prompts, responses, max_length):
