@@ -109,3 +109,37 @@ def sft_loss_from_batch(model, batch):
 def compute_sft_loss(model, tokenizer, prompts, responses, max_length):
     batch = build_sft_batch(tokenizer, prompts, responses, max_length)
     return sft_loss_from_batch(model, batch)
+
+
+
+
+def compute_dpo_loss_from_logps(pc, pr, rc, rr, beta):
+    policy = pc - pr
+    reference = rc - rr
+
+    reference = reference.detach()
+    logits = beta * (policy - reference)
+
+    per_example_loss = -torch.nn.functional.logsigmoid(logits)
+
+    return per_example_loss.mean()
+
+
+
+
+def compute_dpo_loss(policy_model, reference_model, tokenizer, prompts, chosen_responses, rejected_responses, beta, max_length):
+    batches = build_dpo_batch(tokenizer, prompts, chosen_responses, rejected_responses, max_length)
+    chosen_batch = batches["chosen"]
+    rejected_batch = batches["rejected"]
+
+    pc = batch_response_logps(policy_model, chosen_batch)
+    pr = batch_response_logps(policy_model, rejected_batch)
+
+    with torch.no_grad():
+        rc = batch_response_logps(reference_model, chosen_batch)
+        rr = batch_response_logps(reference_model, rejected_batch)
+
+    rc = rc.to(pc.device)
+    rr = rr.to(pc.device)
+
+    return compute_dpo_loss_from_logps(pc, pr, rc, rr, beta)

@@ -31,9 +31,7 @@ def compute_dpo_loss_from_logps(
     reference_rejected_logps,
     beta,
 ):
-    """Return the scalar mean DPO objective from per-example log probabilities."""
-
-    raise NotImplementedError("Connect this adapter to your tensor-level DPO loss")
+    return mylib.compute_dpo_loss_from_logps(policy_chosen_logps, policy_rejected_logps, reference_chosen_logps, reference_rejected_logps, beta)
 
 
 def compute_dpo_loss(
@@ -46,6 +44,5 @@ def compute_dpo_loss(
     beta,
     max_length,
 ):
-    """Return a scalar mean DPO loss with a frozen reference computation."""
+    return mylib.compute_dpo_loss(policy_model, reference_model, tokenizer, prompts, chosen_responses, rejected_responses, beta, max_length)
 
-    raise NotImplementedError("Connect this adapter to your DPO loss code")
