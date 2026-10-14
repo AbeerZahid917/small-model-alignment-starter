@@ -17,7 +17,7 @@ def compute_response_logprobs(model, tokenizer, prompts, responses, max_length):
 
 
 def compute_sft_loss(model, tokenizer, prompts, responses, max_length):
-    return mylib.compute_sft_loss(model, prompts, responses, max_length)
+    return mylib.compute_sft_loss(model, tokenizer, prompts, responses, max_length)
 
 
 def build_dpo_batch(tokenizer, prompts, chosen_responses, rejected_responses, max_length):
