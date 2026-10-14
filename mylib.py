@@ -93,3 +93,19 @@ def batch_response_logps(model, batch):
 def compute_response_logprobs(model, tokenizer, prompts, responses, max_length):
     batch = build_sft_batch(tokenizer, prompts, responses, max_length)
     return batch_response_logps(model, batch)
+
+
+
+
+def sft_loss_from_batch(model, batch):
+    logps, mask = token_logps(model, batch)
+    total = (-logps * mask).sum()
+    count = mask.sum().clamp(min=1.0)
+    return total / count
+
+
+
+
+def compute_sft_loss(model, tokenizer, prompts, responses, max_length):
+    batch = build_sft_batch(tokenizer, prompts, responses, max_length)
+    return sft_loss_from_batch(model, batch)
