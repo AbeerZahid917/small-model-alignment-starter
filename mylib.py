@@ -2,6 +2,8 @@ import json
 import torch
 import torch.nn.functional as F
 
+
+
 def format_prompt(instruction):
     return PROMPT_TEMPLATE.format(instruction=instruction.strip())
 
