@@ -3,6 +3,9 @@ import torch
 import torch.nn.functional as F
 
 
+PROMPT_TEMPLATE = "### Instruction:\n{instruction}\n\n### Response:\n"
+
+
 
 def format_prompt(instruction):
     return PROMPT_TEMPLATE.format(instruction=instruction.strip())
@@ -30,6 +33,31 @@ def encode_text(tokenizer, text):
         except TypeError:
             return list(tokenizer.encode(text))
     return list(tokenizer(text)["input_ids"])
+
+
+
+def get_pad_id(tokenizer):
+    pad = getattr(tokenizer, "pad_token_id", None)
+    if pad is not None:
+        return pad
+    eos = getattr(tokenizer, "eos_token_id", None)
+    if eos is not None:
+        return eos
+    return 0
+
+
+
+def encode_pair(tokenizer, prompt, response, max_length):
+    """Returns (input_ids, labels) as python lists, truncated to max_length.
+    Labels are -100 on prompt tokens. EOS is appended BEFORE truncation."""
+    prompt_ids = encode_text(tokenizer, prompt)
+    resp_ids = encode_text(tokenizer, response)
+    eos = getattr(tokenizer, "eos_token_id", None)
+    if eos is not None:
+        resp_ids = resp_ids + [eos]
+    ids = prompt_ids + resp_ids
+    labels = [-100] * len(prompt_ids) + resp_ids
+    return ids[:max_length], labels[:max_length]
 
 
 
@@ -99,8 +127,7 @@ def token_logps(model, batch):
     labels = batch["labels"].to(device)
 
     out = model(input_ids=input_ids, attention_mask=attention_mask) 
-    logits = out.logits                      
-    # [B, T, V]
+    logits = out.logits
 
     logits = logits[:, :-1, :].float()
     targets = labels[:, 1:]
