@@ -5,8 +5,6 @@ import torch.nn.functional as F
 
 PROMPT_TEMPLATE = "### Instruction:\n{instruction}\n\n### Response:\n"
 
-
-
 def format_prompt(instruction):
     return PROMPT_TEMPLATE.format(instruction=instruction.strip())
 
