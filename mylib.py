@@ -1,6 +1,33 @@
 import torch
 import torch.nn.functional as F
 
+def format_prompt(instruction):
+    return PROMPT_TEMPLATE.format(instruction=instruction.strip())
+
+
+
+
+def read_jsonl(path):
+    rows = []
+    with open(path) as f:
+        for line in f:
+            line = line.strip()
+            if line:
+                rows.append(json.loads(line))
+    return rows
+
+
+
+
+def encode_text(tokenizer, text):
+    """Token ids without special tokens. Falls back for toy tokenizers."""
+    if hasattr(tokenizer, "encode"):
+        try:
+            return list(tokenizer.encode(text, add_special_tokens=False))
+        except TypeError:
+            return list(tokenizer.encode(text))
+    return list(tokenizer(text)["input_ids"])
+
 
 
 
@@ -143,3 +170,25 @@ def compute_dpo_loss(policy_model, reference_model, tokenizer, prompts, chosen_r
     rr = rr.to(pc.device)
 
     return compute_dpo_loss_from_logps(pc, pr, rc, rr, beta)
+
+
+
+
+def dpo_step(policy_model, reference_model, tokenizer, prompts, chosen_responses,
+             rejected_responses, beta, max_length):
+    """Returns (loss, reward_chosen [B], reward_rejected [B]) - rewards are detached."""
+    chosen_batch, rejected_batch = build_dpo_batch(
+        tokenizer, prompts, chosen_responses, rejected_responses, max_length)
+
+    pc = batch_response_logps(policy_model, chosen_batch)
+    pr = batch_response_logps(policy_model, rejected_batch)
+    with torch.no_grad():
+        rc = batch_response_logps(reference_model, chosen_batch)
+        rr = batch_response_logps(reference_model, rejected_batch)
+    rc = rc.to(pc.device)
+    rr = rr.to(pc.device)
+
+    loss = compute_dpo_loss_from_logps(pc, pr, rc, rr, beta)
+    reward_chosen = (beta * (pc - rc)).detach()
+    reward_rejected = (beta * (pr - rr)).detach()
+    return loss, reward_chosen, reward_rejected
