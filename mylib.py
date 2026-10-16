@@ -10,7 +10,6 @@ def format_prompt(instruction):
 
 
 
-
 def read_jsonl(path):
     rows = []
     with open(path) as f:
@@ -202,17 +201,17 @@ def compute_dpo_loss(policy_model, reference_model, tokenizer, prompts, chosen_r
 
 
 
-def dpo_step(policy_model, reference_model, tokenizer, prompts, chosen_responses,
-             rejected_responses, beta, max_length):
-    """Returns (loss, reward_chosen [B], reward_rejected [B]) - rewards are detached."""
-    chosen_batch, rejected_batch = build_dpo_batch(
-        tokenizer, prompts, chosen_responses, rejected_responses, max_length)
+def dpo_step(policy_model, reference_model, tokenizer, prompts, chosen_responses, rejected_responses, beta, max_length):
+    batches = build_dpo_batch(tokenizer, prompts, chosen_responses, rejected_responses, max_length)
+    chosen_batch, rejected_batch = batches["chosen"], batches["rejected"]
 
     pc = batch_response_logps(policy_model, chosen_batch)
     pr = batch_response_logps(policy_model, rejected_batch)
+
     with torch.no_grad():
         rc = batch_response_logps(reference_model, chosen_batch)
         rr = batch_response_logps(reference_model, rejected_batch)
+        
     rc = rc.to(pc.device)
     rr = rr.to(pc.device)
 
